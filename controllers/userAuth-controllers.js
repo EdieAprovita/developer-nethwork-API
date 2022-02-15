@@ -84,3 +84,36 @@ exports.loginUser = asyncHandler(async (req, res) => {
 		});
 	}
 });
+
+// @desc    Update user
+// @route   PUT /api/user/:id
+// @access  Private
+
+exports.updateUser = asyncHandler(async (req, res) => {
+	const user = await User.findById(req.user.__id);
+
+	if (user) {
+		user.name = req.body.name || user.name;
+		user.email = req.body.email || user.email;
+
+		if (req.body.password) {
+			user.password = req.body.password;
+		}
+
+		const updateUser = await user.save();
+
+		res.status(200).json({
+			_id: updateUser._id,
+			name: updateUser.name,
+			email: updateUser.email,
+			avatar: updateUser.avatar,
+			success: true,
+			token: generateToken(updateUser._id),
+		});
+	} else {
+		res.status(400).json({
+			success: false,
+			error: `Message: ${err.message}`,
+		});
+	}
+});
