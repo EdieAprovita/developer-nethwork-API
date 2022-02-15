@@ -1,4 +1,5 @@
 const normalize = require('normalize-url');
+const asyncHandler = require('express-async-handler');
 
 const User = require('../models/User');
 const Profile = require('../models/Profile');
