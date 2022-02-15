@@ -1,0 +1,12 @@
+{
+  "name": "developer-nethwork-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Edgar Chavero <edieveg316@gmail.com>",
+  "license": "MIT"
+}
