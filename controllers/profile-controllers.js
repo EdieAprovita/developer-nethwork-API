@@ -10,7 +10,7 @@ const Post = require('../models/Post');
 // @access  Private
 
 exports.getUserProfile = asyncHandler(async (req, res) => {
-	const profile = await Profile.findOne({ user: req.user.id }).populate('user', [
+	const profile = await Profile.findOne({ user: req.user._id }).populate('user', [
 		'name',
 		'avatar',
 	]);
@@ -27,7 +27,7 @@ exports.getUserProfile = asyncHandler(async (req, res) => {
 // @access   Private
 
 exports.createNewProfile = asyncHandler(async (req, res) => {
-	const profileExists = await Profile.findOne({ user: req.user.id });
+	const profileExists = await Profile.findOne({ user: req.user._id });
 
 	if (profileExists) {
 		return res.status(400).json({ msg: 'Profile already exists' });
@@ -47,7 +47,7 @@ exports.createNewProfile = asyncHandler(async (req, res) => {
 
 	// Build profile object
 	const profileFields = {
-		user: req.user.id,
+		user: req.user._id,
 		website:
 			website && website !== '' ? normalize(website, { forceHttps: true }) : '',
 		skills: skills ? skills.split(',').map(skill => ' ' + skill.trim()) : [],
@@ -88,7 +88,7 @@ exports.createNewProfile = asyncHandler(async (req, res) => {
 // @access  Private
 
 exports.updateUserProfile = asyncHandler(async (req, res) => {
-	const profile = await Profile.findOne({ user: req.user.id });
+	const profile = await Profile.findOne({ user: req.user._id });
 
 	if (!profile) {
 		return res.status(400).json({ msg: 'Profile does not exist' });
@@ -108,7 +108,7 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
 
 	// Build profile object
 	const profileFields = {
-		user: req.user.id,
+		user: req.user._id,
 		website:
 			website && website !== '' ? normalize(website, { forceHttps: true }) : '',
 		skills: skills ? skills.split(',').map(skill => ' ' + skill.trim()) : [],
@@ -131,7 +131,7 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
 
 	// Update profile
 	const updatedProfile = await Profile.findOneAndUpdate(
-		{ user: req.user.id },
+		{ user: req.user._id },
 		{ $set: profileFields },
 		{ new: true, upsert: true, setDefaultsOnInsert: true }
 	);
@@ -184,14 +184,50 @@ exports.getUserProfileById = asyncHandler(async (req, res) => {
 exports.deleteUser = asyncHandler(async (req, res) => {
 	try {
 		await Promise.all([
-			Profile.findOneAndRemove({ user: req.user.id }),
-			User.findOneAndRemove({ _id: req.user.id }),
-			Post.deleteMany({ user: req.user.id }),
+			Profile.findOneAndRemove({ user: req.user._id }),
+			User.findOneAndRemove({ _id: req.user._id }),
+			Post.deleteMany({ user: req.user._id }),
 		]);
 
 		res.status(200).json({ msg: 'User deleted' });
 	} catch (error) {
 		console.error(error.message);
 		res.status(500).send('Server Error');
+	}
+});
+
+// @route    PUT api/profile/experience
+// @desc     Add profile experience
+// @access   Private
+
+exports.updateExperience = asyncHandler(async (req, res) => {
+	const profile = await Profile.findOne({ user: req.user._id });
+
+	profile.experience.unshift(req.body);
+
+	await profile.save();
+
+	if (profile) {
+		return res.status(200).json(profile);
+	} else {
+		return res.status(400).json({ msg: 'There is no profile for this user' });
+	}
+});
+
+// @route    DELETE api/profile/experience/:exp_id
+// @desc     Delete experience from profile
+// @access   Private
+
+exports.deleteExperience = asyncHandler(async (req, res) => {
+	const foundProfile = await Profile.findOne({ user: req.user._id });
+
+	if (foundProfile) {
+		foundProfile.experience = foundProfile.experience.filter(
+			exp => exp._id.toString() !== req.params.exp_id
+		);
+		await foundProfile.save();
+		return res.status(200).json(foundProfile);
+	} else {
+		return res.status(400).json({ msg: 'There is no profile for this user' });
 	}
 });

@@ -5,6 +5,8 @@ const morgan = require('morgan');
 const colors = require('colors');
 const connectDB = require('./config/db');
 
+const user = require('./routes/user-routes');
+
 dotenv.config();
 
 connectDB();
@@ -28,6 +30,8 @@ if (process.env.NODE_ENV === 'production') {
 		res.send('API is running');
 	});
 }
+
+app.use('/api/users', user);
 
 const PORT = process.env.PORT || 5000;
 
