@@ -8,26 +8,26 @@ const Post = require('../models/Post');
 // @access   Private
 
 exports.createPost = asyncHandler(async (req, res) => {
-	const user = await User.findById(req.user._id).select('-password');
+	try {
+		const user = await User.findById(req.user._id).select('-password');
 
-	const newPost = await Post.create({
-		text: req.body.text,
-		name: user.name,
-		avatar: user.avatar,
-		user: req.user._id,
-	});
+		const newPost = await Post.create({
+			text: req.body.text,
+			name: user.name,
+			avatar: user.avatar,
+			user: req.user._id,
+		});
 
-	const post = await newPost.save();
+		const post = await newPost.save();
 
-	if (post) {
 		res.status(201).json({
 			success: true,
 			data: post,
 		});
-	} else {
-		res.status(400).json({
+	} catch (error) {
+		res.status(500).json({
 			success: false,
-			error: 'Error creating post',
+			error: `Server Error ${error}`,
 		});
 	}
 });
@@ -37,17 +37,16 @@ exports.createPost = asyncHandler(async (req, res) => {
 // @access   Private
 
 exports.getAllPosts = asyncHandler(async (req, res) => {
-	const posts = await Post.find().sort({ date: -1 });
-
-	if (posts) {
+	try {
+		const posts = await Post.find().sort({ date: -1 });
 		res.status(200).json({
 			success: true,
 			data: posts,
 		});
-	} else {
-		res.status(400).json({
+	} catch (error) {
+		res.status(500).json({
 			success: false,
-			error: 'Error getting posts',
+			error: `Server Error ${error}`,
 		});
 	}
 });
@@ -57,17 +56,22 @@ exports.getAllPosts = asyncHandler(async (req, res) => {
 // @access   Private
 
 exports.getPostById = asyncHandler(async (req, res) => {
-	const post = await Post.findById(req.params.id);
+	try {
+		const post = await Post.findById(req.params.id);
+		if (!post) {
+			return res.status(404).json({
+				msg: 'Post not Found',
+			});
+		}
 
-	if (post) {
 		res.status(200).json({
 			success: true,
 			data: post,
 		});
-	} else {
-		res.status(400).json({
+	} catch (error) {
+		res.status(500).json({
 			success: false,
-			error: 'Error getting post',
+			error: `Server Error ${error}`,
 		});
 	}
 });
@@ -77,19 +81,26 @@ exports.getPostById = asyncHandler(async (req, res) => {
 // @access   Private
 
 exports.deletePost = asyncHandler(async (req, res) => {
-	const post = await Post.findById(req.params.id);
+	try {
+		const post = await Post.findById(req.params.id);
 
-	if (post) {
+		if (!post) {
+			return res.status(404).json({
+				msg: 'Post not Found',
+			});
+		}
+
 		await post.remove();
 
 		res.status(200).json({
 			success: true,
+			msg: 'Post deleted',
 			data: {},
 		});
-	} else {
-		res.status(400).json({
+	} catch (error) {
+		res.status(500).json({
 			success: false,
-			error: 'Error deleting post',
+			error: `Server Error ${error}`,
 		});
 	}
 });
@@ -99,28 +110,26 @@ exports.deletePost = asyncHandler(async (req, res) => {
 // @access   Private
 
 exports.likePost = asyncHandler(async (req, res) => {
-	const post = await Post.findById(req.params.id);
+	try {
+		const post = await Post.findById(req.params.id);
 
-	if (post) {
-		if (post.likes.filter(like => like.user.toString() === req.user._id).length > 0) {
-			return res.status(400).json({
-				success: false,
-				error: 'Post already liked',
-			});
+		// Check if the post has already been liked
+		if (post.likes.some(like => like.user.toString() === req.user.id)) {
+			return res.status(400).json({ msg: 'Post already liked' });
 		}
 
-		post.likes.unshift({ user: req.user._id });
+		post.likes.unshift({ user: req.user.id });
 
 		await post.save();
 
-		res.status(200).json({
+		res.json(200).json({
 			success: true,
 			data: post,
 		});
-	} else {
-		res.status(400).json({
+	} catch (error) {
+		res.status(500).json({
 			success: false,
-			error: 'Error liking post',
+			error: `Server Error ${error}`,
 		});
 	}
 });
@@ -130,30 +139,27 @@ exports.likePost = asyncHandler(async (req, res) => {
 // @access   Private
 
 exports.unlikePost = asyncHandler(async (req, res) => {
-	const post = await Post.findById(req.params.id);
+	try {
+		const post = await Post.findById(req.params.id);
 
-	//check if the post has already been liked
-	if (!post.likes.filter(like => like.user.toString() === req.user._id).length > 0) {
-		return res.status(400).json({
-			success: false,
-			error: 'Post has not yet been liked',
-		});
-	}
+		// Check if the post has not yet been liked
+		if (!post.likes.some(like => like.user.toString() === req.user.id)) {
+			return res.status(400).json({ msg: 'Post has not yet been liked' });
+		}
 
-	//Remove like
-	post.likes = post.likes.filter(like => like.user.toString() !== req.user._id);
+		// remove the like
+		post.likes = post.likes.filter(({ user }) => user.toString() !== req.user.id);
 
-	await post.save();
+		await post.save();
 
-	if (post.likes) {
-		res.status(200).json({
+		res.status(201).json({
 			success: true,
 			data: post.likes,
 		});
-	} else {
-		res.status(200).json({
-			success: true,
-			data: {},
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			error: `Server Error ${error}`,
 		});
 	}
 });
@@ -163,29 +169,29 @@ exports.unlikePost = asyncHandler(async (req, res) => {
 // @access   Private
 
 exports.commentPost = asyncHandler(async (req, res) => {
-	const user = await User.findById(req.user._id).select('-password');
-	const post = await Post.findById(req.params.id);
+	try {
+		const user = await User.findById(req.user._id).select('-password');
+		const post = await Post.findById(req.params.id);
 
-	const newComment = {
-		text: req.body.text,
-		name: user.name,
-		avatar: user.avatar,
-		user: req.user._id,
-	};
+		const newComment = {
+			text: req.body.text,
+			name: user.name,
+			avatar: user.avatar,
+			user: req.user._id,
+		};
 
-	post.comments.unshift(newComment);
+		post.comments.unshift(newComment);
 
-	await post.save();
+		await post.save();
 
-	if (post.comments) {
 		res.status(200).json({
 			success: true,
 			data: post.comments,
 		});
-	} else {
-		res.status(400).json({
+	} catch (error) {
+		res.status(500).json({
 			success: false,
-			error: 'Error commenting on post',
+			error: `Server Error ${error}`,
 		});
 	}
 });
@@ -195,29 +201,31 @@ exports.commentPost = asyncHandler(async (req, res) => {
 // @access   Private
 
 exports.deleteComment = asyncHandler(async (req, res) => {
-	const post = await Post.findById(req.params.id);
+	try {
+		const post = await Post.findById(req.params.id);
 
-	//Pull out comment
-	const comment = post.comment.find(comment => comment.id === req.params.comment_id);
+		//Pull out comment
+		const comment = post.comment.find(
+			comment => comment.id === req.params.comment_id
+		);
 
-	//Make sure comment exists
-	if (!comment) {
-		return res.status(404).json({ msg: 'Comment does not exist' });
-	}
+		//Make sure comment exists
+		if (!comment) {
+			return res.status(404).json({ msg: 'Comment does not exist' });
+		}
 
-	post.comments = post.comments.filter(({ id }) => id !== req.params.comment._id);
+		post.comments = post.comments.filter(({ id }) => id !== req.params.comment._id);
 
-	await post.save();
+		await post.save();
 
-	if (post.comments) {
 		res.status(200).json({
 			success: true,
 			data: post.comments,
 		});
-	} else {
-		res.status(400).json({
+	} catch (error) {
+		res.status(500).json({
 			success: false,
-			error: 'Error deleting comment',
+			error: `Server Error ${error}`,
 		});
 	}
 });
