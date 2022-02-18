@@ -193,7 +193,7 @@ exports.getAllProfiles = asyncHandler(async (req, res) => {
 // @desc     Get profile by user ID
 // @access   Public
 
-exports.getUserProfileById = asyncHandler(async (req, res) => {
+exports.getProfileById = asyncHandler(async (req, res) => {
 	try {
 		const profile = await Profile.findOne({ user: req.params.user_id }).populate(
 			'user',

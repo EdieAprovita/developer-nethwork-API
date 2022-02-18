@@ -5,7 +5,9 @@ const morgan = require('morgan');
 const colors = require('colors');
 const connectDB = require('./config/db');
 
-const user = require('./routes/user-routes');
+const User = require('./routes/user-routes');
+const Profile = require('./routes/profile-routes');
+const Post = require('./routes/post-routes');
 
 dotenv.config();
 
@@ -31,7 +33,9 @@ if (process.env.NODE_ENV === 'production') {
 	});
 }
 
-app.use('/api/users', user);
+app.use('/api/users', User);
+app.use('/api/profile', Profile);
+app.use('/api/posts', Post);
 
 const PORT = process.env.PORT || 5000;
 
