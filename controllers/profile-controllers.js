@@ -1,5 +1,6 @@
 const normalize = require('normalize-url');
 const asyncHandler = require('express-async-handler');
+const axios = require('axios');
 
 const User = require('../models/User');
 const Profile = require('../models/Profile');
@@ -10,15 +11,28 @@ const Post = require('../models/Post');
 // @access  Private
 
 exports.getUserProfile = asyncHandler(async (req, res) => {
-	const profile = await Profile.findOne({ user: req.user._id }).populate('user', [
-		'name',
-		'avatar',
-	]);
+	try {
+		const profile = await Profile.findOne({ user: req.user._id }).populate('user', [
+			'name',
+			'avatar',
+		]);
 
-	if (profile) {
-		res.status(200).json({ profile });
-	} else {
-		res.status(400).json({ msg: 'There is no profile for this user' });
+		if (!profile) {
+			return res.status(400).json({
+				success: false,
+				error: 'Profile not found',
+			});
+		}
+
+		res.status(200).json({
+			success: true,
+			data: profile,
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			error: `Server Error ${error}`,
+		});
 	}
 });
 
@@ -27,59 +41,64 @@ exports.getUserProfile = asyncHandler(async (req, res) => {
 // @access   Private
 
 exports.createNewProfile = asyncHandler(async (req, res) => {
-	const profileExists = await Profile.findOne({ user: req.user._id });
+	try {
+		const profileExists = await Profile.findOne({ user: req.user._id });
 
-	if (profileExists) {
-		return res.status(400).json({ msg: 'Profile already exists' });
-	}
-
-	const {
-		website,
-		skills,
-		youtube,
-		twitter,
-		instagram,
-		linkedin,
-		facebook,
-		//Spread the rest of the fields
-		...rest
-	} = req.body;
-
-	// Build profile object
-	const profileFields = {
-		user: req.user._id,
-		website:
-			website && website !== '' ? normalize(website, { forceHttps: true }) : '',
-		skills: skills ? skills.split(',').map(skill => ' ' + skill.trim()) : [],
-		...rest,
-	};
-
-	// Build socialFields object
-
-	const socialFields = { youtube, twitter, instagram, linkedin, facebook };
-
-	//Normalize the social fields
-	for (const [key, value] of Object.entries(socialFields)) {
-		if (value && value.length > 0) {
-			socialFields[key] = normalize(value, { forceHttps: true });
+		if (profileExists) {
+			return res.status(400).json({ msg: 'Profile already exists' });
 		}
 
-		//Add the social fields to the profileFields
-		profileFields.social = socialFields;
-	}
+		const {
+			website,
+			skills,
+			youtube,
+			twitter,
+			instagram,
+			linkedin,
+			facebook,
+			//Spread the rest of the fields
+			...rest
+		} = req.body;
 
-	// Create profile
-	const newProfile = await Profile.create({
-		...profileFields,
-	});
+		// Build profile object
+		const profileFields = {
+			user: req.user._id,
+			website:
+				website && website !== '' ? normalize(website, { forceHttps: true }) : '',
+			skills: skills ? skills.split(',').map(skill => ' ' + skill.trim()) : [],
+			...rest,
+		};
 
-	if (newProfile) {
-		res.status(201).json({
-			_id: user._id,
-			profile: newProfile,
+		// Build socialFields object
+
+		const socialFields = { youtube, twitter, instagram, linkedin, facebook };
+
+		//Normalize the social fields
+		for (const [key, value] of Object.entries(socialFields)) {
+			if (value && value.length > 0) {
+				socialFields[key] = normalize(value, { forceHttps: true });
+			}
+
+			//Add the social fields to the profileFields
+			profileFields.social = socialFields;
+		}
+
+		// Create profile
+		const newProfile = await Profile.create({
+			...profileFields,
 		});
-	} else {
-		res.status(400).json({ msg: `Error: ${err.message}` });
+
+		if (newProfile) {
+			res.status(201).json({
+				_id: user._id,
+				profile: newProfile,
+			});
+		}
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			error: `Server Error ${error}`,
+		});
 	}
 });
 
@@ -88,61 +107,66 @@ exports.createNewProfile = asyncHandler(async (req, res) => {
 // @access  Private
 
 exports.updateUserProfile = asyncHandler(async (req, res) => {
-	const profile = await Profile.findOne({ user: req.user._id });
+	try {
+		const profile = await Profile.findOne({ user: req.user._id });
 
-	if (!profile) {
-		return res.status(400).json({ msg: 'Profile does not exist' });
-	}
-
-	const {
-		website,
-		skills,
-		youtube,
-		twitter,
-		instagram,
-		linkedin,
-		facebook,
-		//Spread the rest of the fields
-		...rest
-	} = req.body;
-
-	// Build profile object
-	const profileFields = {
-		user: req.user._id,
-		website:
-			website && website !== '' ? normalize(website, { forceHttps: true }) : '',
-		skills: skills ? skills.split(',').map(skill => ' ' + skill.trim()) : [],
-		...rest,
-	};
-
-	// Build socialFields object
-
-	const socialFields = { youtube, twitter, instagram, linkedin, facebook };
-
-	//Normalize the social fields
-	for (const [key, value] of Object.entries(socialFields)) {
-		if (value && value.length > 0) {
-			socialFields[key] = normalize(value, { forceHttps: true });
+		if (!profile) {
+			return res.status(400).json({ msg: 'Profile does not exist' });
 		}
 
-		//Add the social fields to the profileFields
-		profileFields.social = socialFields;
-	}
+		const {
+			website,
+			skills,
+			youtube,
+			twitter,
+			instagram,
+			linkedin,
+			facebook,
+			//Spread the rest of the fields
+			...rest
+		} = req.body;
 
-	// Update profile
-	const updatedProfile = await Profile.findOneAndUpdate(
-		{ user: req.user._id },
-		{ $set: profileFields },
-		{ new: true, upsert: true, setDefaultsOnInsert: true }
-	);
+		// Build profile object
+		const profileFields = {
+			user: req.user._id,
+			website:
+				website && website !== '' ? normalize(website, { forceHttps: true }) : '',
+			skills: skills ? skills.split(',').map(skill => ' ' + skill.trim()) : [],
+			...rest,
+		};
 
-	if (updatedProfile) {
-		res.status(200).json({
-			_id: user._id,
-			profile: updatedProfile,
+		// Build socialFields object
+
+		const socialFields = { youtube, twitter, instagram, linkedin, facebook };
+
+		//Normalize the social fields
+		for (const [key, value] of Object.entries(socialFields)) {
+			if (value && value.length > 0) {
+				socialFields[key] = normalize(value, { forceHttps: true });
+			}
+
+			//Add the social fields to the profileFields
+			profileFields.social = socialFields;
+		}
+
+		// Update profile
+		const updatedProfile = await Profile.findOneAndUpdate(
+			{ user: req.user._id },
+			{ $set: profileFields },
+			{ new: true, upsert: true, setDefaultsOnInsert: true }
+		);
+
+		if (updatedProfile) {
+			res.status(200).json({
+				_id: user._id,
+				profile: updatedProfile,
+			});
+		}
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			error: `Server Error ${error}`,
 		});
-	} else {
-		res.status(400).json({ msg: `Error: ${err.message}` });
 	}
 });
 
@@ -151,12 +175,17 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
 // @access   Public
 
 exports.getAllProfiles = asyncHandler(async (req, res) => {
-	const profiles = await Profile.find().populate('user', ['name', 'avatar']);
-
-	if (profiles) {
-		return res.status(200).json(profiles);
-	} else {
-		return res.status(400).json({ msg: 'There are no profiles' });
+	try {
+		const profiles = await Profile.find().populate('user', ['name', 'avatar']);
+		res.status(200).json({
+			success: true,
+			data: profiles,
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			error: `Server Error ${error}`,
+		});
 	}
 });
 
@@ -165,15 +194,20 @@ exports.getAllProfiles = asyncHandler(async (req, res) => {
 // @access   Public
 
 exports.getUserProfileById = asyncHandler(async (req, res) => {
-	const profile = await Profile.findOne({ user: req.params.user_id }).populate('user', [
-		'name',
-		'avatar',
-	]);
-
-	if (profile) {
-		return res.status(200).json(profile);
-	} else {
-		return res.status(400).json({ msg: 'There is no profile for this user' });
+	try {
+		const profile = await Profile.findOne({ user: req.params.user_id }).populate(
+			'user',
+			['name', 'avatar']
+		);
+		res.status(200).json({
+			success: true,
+			data: profile,
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			error: `Server Error ${error}`,
+		});
 	}
 });
 
@@ -229,5 +263,92 @@ exports.deleteExperience = asyncHandler(async (req, res) => {
 		return res.status(200).json(foundProfile);
 	} else {
 		return res.status(400).json({ msg: 'There is no profile for this user' });
+	}
+});
+
+// @route    PUT api/profile/education
+// @desc     Add profile education
+// @access   Private
+
+exports.addProfileEducation = asyncHandler(async (req, res) => {
+	try {
+		const profile = await Profile.findOne({ user: req.user._id });
+
+		if (!profile) {
+			res.status(200).json({ msg: 'Profile does not exist' });
+		}
+
+		profile.education.unshift(req.body);
+
+		await profile.save();
+
+		res.status(200).json({
+			success: true,
+			data: profile,
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			error: `Server Error ${error}`,
+		});
+	}
+});
+
+// @route    DELETE api/profile/education/:edu_id
+// @desc     Delete education from profile
+// @access   Private
+
+exports.deleteProfileEducation = asyncHandler(async (req, res) => {
+	try {
+		const foundProfile = await Profile.findOne({ user: req.user._id });
+
+		if (!foundProfile) {
+			return res.status(400).json({ msg: 'Profile does not exist' });
+		}
+
+		foundProfile.education = foundProfile.education.filter(
+			edu => edu._id.toString() !== req.params.edu_id
+		);
+
+		await foundProfile.save();
+
+		res.status(200).json({
+			success: true,
+			data: foundProfile,
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			error: `Server Error ${error}`,
+		});
+	}
+});
+
+// @route    GET api/profile/github/:username
+// @desc     Get user repos from Github
+// @access   Public
+
+exports.getGithubRepos = asyncHandler(async (req, res) => {
+	try {
+		const url = encodeURI(
+			`https://api.github.com/users/${req.params.username}/repos?per_page=5&sort=created:asc`
+		);
+
+		const headers = {
+			'user-agent': 'node.js',
+			Authorization: `token ${config.get('githubToken')}`,
+		};
+
+		const gitHubResponse = await axios.get(url, { headers });
+
+		res.status(200).json({
+			success: true,
+			data: gitHubResponse.data,
+		});
+	} catch (error) {
+		res.status(500).json({
+			success: false,
+			error: `Server Error ${error}`,
+		});
 	}
 });
