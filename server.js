@@ -1,11 +1,13 @@
-const express = require('express');
-const path = require('path');
-const dotenv = require('dotenv');
-const morgan = require('morgan');
-const colors = require('colors');
-const connectDB = require('./config/db');
+import express from 'express';
+import path from 'path';
+import dotenv from 'dotenv';
+import morgan from 'morgan';
+import colors from 'colors';
+import connectDB from './config/db.js';
 
-const user = require('./routes/user-routes');
+import User from './routes/user-routes.js';
+import Profile from './routes/profile-routes.js';
+import Post from './routes/post-routes.js';
 
 dotenv.config();
 
@@ -31,7 +33,9 @@ if (process.env.NODE_ENV === 'production') {
 	});
 }
 
-app.use('/api/users', user);
+app.use('/api/users', User);
+app.use('/api/profile', Profile);
+app.use('/api/posts', Post);
 
 const PORT = process.env.PORT || 5000;
 

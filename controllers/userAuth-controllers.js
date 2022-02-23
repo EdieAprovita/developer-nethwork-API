@@ -1,15 +1,15 @@
-const generateToken = require('../utils/generateToken');
-const asyncHandler = require('express-async-handler');
-const gravatar = require('gravatar');
-const normalize = require('normalize-url');
+import generateToken from '../utils/generateToken.js';
+import asyncHandler from 'express-async-handler';
+import gravatar from 'gravatar';
+import normalize from 'normalize-url';
 
-const User = require('../models/User');
+import User from '../models/User.js';
 
 // @desc    Register a new user
 // @route   POST /api/auth
 // @access  Public
 
-exports.registerUser = asyncHandler(async (req, res) => {
+const registerUser = asyncHandler(async (req, res) => {
 	const { name, email, password } = req.body;
 
 	try {
@@ -63,7 +63,7 @@ exports.registerUser = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 
-exports.loginUser = asyncHandler(async (req, res) => {
+const loginUser = asyncHandler(async (req, res) => {
 	const { email, password } = req.body;
 
 	try {
@@ -93,7 +93,7 @@ exports.loginUser = asyncHandler(async (req, res) => {
 // @route   PUT /api/user/:id
 // @access  Private
 
-exports.updateUser = asyncHandler(async (req, res) => {
+const updateUser = asyncHandler(async (req, res) => {
 	try {
 		const user = await User.findById(req.user.__id);
 
@@ -123,3 +123,5 @@ exports.updateUser = asyncHandler(async (req, res) => {
 		});
 	}
 });
+
+export { registerUser, loginUser, updateUser };

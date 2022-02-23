@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const PostSchema = new mongoose.Schema(
 	{
 		user: {
-			type: Schema.Types.ObjectId,
+			type: mongoose.Schema.Types.ObjectId,
 		},
 		text: {
 			type: String,
@@ -18,14 +18,14 @@ const PostSchema = new mongoose.Schema(
 		likes: [
 			{
 				user: {
-					type: Schema.Types.ObjectId,
+					type: mongoose.Schema.Types.ObjectId,
 				},
 			},
 		],
 		comments: [
 			{
 				user: {
-					type: Schema.Types.ObjectId,
+					type: mongoose.Schema.Types.ObjectId,
 				},
 				text: {
 					type: String,
@@ -53,4 +53,6 @@ const PostSchema = new mongoose.Schema(
 	}
 );
 
-module.exports = mongoose.model('post', PostSchema);
+const Post = mongoose.model('post', PostSchema);
+
+export default Post;
