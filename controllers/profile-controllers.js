@@ -1,18 +1,18 @@
-const normalize = require('normalize-url');
-const asyncHandler = require('express-async-handler');
-const axios = require('axios');
+import normalize from 'normalize-url';
+import asyncHandler from 'express-async-handler';
+import axios from 'axios';
 
-const User = require('../models/User');
-const Profile = require('../models/Profile');
-const Post = require('../models/Post');
+import User from '../models/User.js';
+import Profile from '../models/Profile.js';
+import Post from '../models/Post.js';
 
 // @desc    Get user profile
 // @route   GET /api/auth/profile
 // @access  Private
 
-exports.getUserProfile = asyncHandler(async (req, res) => {
+const getUserProfile = asyncHandler(async (req, res) => {
 	try {
-		const profile = await Profile.findOne({ user: req.user._id }).populate('user', [
+		const profile = await Profile.findById({ user: req.user._id }).populate('user', [
 			'name',
 			'avatar',
 		]);
@@ -40,9 +40,9 @@ exports.getUserProfile = asyncHandler(async (req, res) => {
 // @desc     Create a user profile
 // @access   Private
 
-exports.createNewProfile = asyncHandler(async (req, res) => {
+const createNewProfile = asyncHandler(async (req, res) => {
 	try {
-		const profileExists = await Profile.findOne({ user: req.user._id });
+		const profileExists = await Profile.findById({ user: req.user._id });
 
 		if (profileExists) {
 			return res.status(400).json({ msg: 'Profile already exists' });
@@ -106,9 +106,9 @@ exports.createNewProfile = asyncHandler(async (req, res) => {
 // @route   PUT /api/auth/profile
 // @access  Private
 
-exports.updateUserProfile = asyncHandler(async (req, res) => {
+const updateUserProfile = asyncHandler(async (req, res) => {
 	try {
-		const profile = await Profile.findOne({ user: req.user._id });
+		const profile = await Profile.findById({ user: req.user._id });
 
 		if (!profile) {
 			return res.status(400).json({ msg: 'Profile does not exist' });
@@ -174,7 +174,7 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
 // @desc     Get all profiles
 // @access   Public
 
-exports.getAllProfiles = asyncHandler(async (req, res) => {
+const getAllProfiles = asyncHandler(async (req, res) => {
 	try {
 		const profiles = await Profile.find().populate('user', ['name', 'avatar']);
 		res.status(200).json({
@@ -193,7 +193,7 @@ exports.getAllProfiles = asyncHandler(async (req, res) => {
 // @desc     Get profile by user ID
 // @access   Public
 
-exports.getProfileById = asyncHandler(async (req, res) => {
+const getProfileById = asyncHandler(async (req, res) => {
 	try {
 		const profile = await Profile.findOne({ user: req.params.user_id }).populate(
 			'user',
@@ -215,7 +215,7 @@ exports.getProfileById = asyncHandler(async (req, res) => {
 // @desc     Delete profile, user & posts
 // @access   Private
 
-exports.deleteUser = asyncHandler(async (req, res) => {
+const deleteUser = asyncHandler(async (req, res) => {
 	try {
 		await Promise.all([
 			Profile.findOneAndRemove({ user: req.user._id }),
@@ -234,7 +234,7 @@ exports.deleteUser = asyncHandler(async (req, res) => {
 // @desc     Add profile experience
 // @access   Private
 
-exports.updateExperience = asyncHandler(async (req, res) => {
+const updateExperience = asyncHandler(async (req, res) => {
 	const profile = await Profile.findOne({ user: req.user._id });
 
 	profile.experience.unshift(req.body);
@@ -252,7 +252,7 @@ exports.updateExperience = asyncHandler(async (req, res) => {
 // @desc     Delete experience from profile
 // @access   Private
 
-exports.deleteExperience = asyncHandler(async (req, res) => {
+const deleteExperience = asyncHandler(async (req, res) => {
 	const foundProfile = await Profile.findOne({ user: req.user._id });
 
 	if (foundProfile) {
@@ -270,7 +270,7 @@ exports.deleteExperience = asyncHandler(async (req, res) => {
 // @desc     Add profile education
 // @access   Private
 
-exports.addProfileEducation = asyncHandler(async (req, res) => {
+const addProfileEducation = asyncHandler(async (req, res) => {
 	try {
 		const profile = await Profile.findOne({ user: req.user._id });
 
@@ -298,7 +298,7 @@ exports.addProfileEducation = asyncHandler(async (req, res) => {
 // @desc     Delete education from profile
 // @access   Private
 
-exports.deleteProfileEducation = asyncHandler(async (req, res) => {
+const deleteProfileEducation = asyncHandler(async (req, res) => {
 	try {
 		const foundProfile = await Profile.findOne({ user: req.user._id });
 
@@ -328,7 +328,7 @@ exports.deleteProfileEducation = asyncHandler(async (req, res) => {
 // @desc     Get user repos from Github
 // @access   Public
 
-exports.getGithubRepos = asyncHandler(async (req, res) => {
+const getGithubRepos = asyncHandler(async (req, res) => {
 	try {
 		const url = encodeURI(
 			`https://api.github.com/users/${req.params.username}/repos?per_page=5&sort=created:asc`
@@ -352,3 +352,17 @@ exports.getGithubRepos = asyncHandler(async (req, res) => {
 		});
 	}
 });
+
+export {
+	getUserProfile,
+	getAllProfiles,
+	getProfileById,
+	createNewProfile,
+	updateUserProfile,
+	updateExperience,
+	addProfileEducation,
+	deleteExperience,
+	deleteProfileEducation,
+	getGithubRepos,
+	deleteUser,
+};

@@ -1,13 +1,13 @@
-const express = require('express');
-const path = require('path');
-const dotenv = require('dotenv');
-const morgan = require('morgan');
-const colors = require('colors');
-const connectDB = require('./config/db');
+import express from 'express';
+import path from 'path';
+import dotenv from 'dotenv';
+import morgan from 'morgan';
+import colors from 'colors';
+import connectDB from './config/db.js';
 
-const User = require('./routes/user-routes');
-const Profile = require('./routes/profile-routes');
-const Post = require('./routes/post-routes');
+import User from './routes/user-routes.js';
+import Profile from './routes/profile-routes.js';
+import Post from './routes/post-routes.js';
 
 dotenv.config();
 

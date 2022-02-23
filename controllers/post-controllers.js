@@ -1,13 +1,13 @@
-const asyncHandler = require('express-async-handler');
+import asyncHandler from 'express-async-handler';
 
-const User = require('../models/User');
-const Post = require('../models/Post');
+import User from '../models/User.js';
+import Post from '../models/Post.js';
 
 // @route    POST api/posts
 // @desc     Create a post
 // @access   Private
 
-exports.createPost = asyncHandler(async (req, res) => {
+const createPost = asyncHandler(async (req, res) => {
 	try {
 		const user = await User.findById(req.user._id).select('-password');
 
@@ -36,7 +36,7 @@ exports.createPost = asyncHandler(async (req, res) => {
 // @desc     Get all posts
 // @access   Private
 
-exports.getAllPosts = asyncHandler(async (req, res) => {
+const getAllPosts = asyncHandler(async (req, res) => {
 	try {
 		const posts = await Post.find().sort({ date: -1 });
 		res.status(200).json({
@@ -55,7 +55,7 @@ exports.getAllPosts = asyncHandler(async (req, res) => {
 // @desc     Get post by ID
 // @access   Private
 
-exports.getPostById = asyncHandler(async (req, res) => {
+const getPostById = asyncHandler(async (req, res) => {
 	try {
 		const post = await Post.findById(req.params.id);
 		if (!post) {
@@ -80,7 +80,7 @@ exports.getPostById = asyncHandler(async (req, res) => {
 // @desc     Delete a post
 // @access   Private
 
-exports.deletePost = asyncHandler(async (req, res) => {
+const deletePost = asyncHandler(async (req, res) => {
 	try {
 		const post = await Post.findById(req.params.id);
 
@@ -109,7 +109,7 @@ exports.deletePost = asyncHandler(async (req, res) => {
 // @desc     Like a post
 // @access   Private
 
-exports.likePost = asyncHandler(async (req, res) => {
+const likePost = asyncHandler(async (req, res) => {
 	try {
 		const post = await Post.findById(req.params.id);
 
@@ -138,7 +138,7 @@ exports.likePost = asyncHandler(async (req, res) => {
 // @desc     Unlike a post
 // @access   Private
 
-exports.unlikePost = asyncHandler(async (req, res) => {
+const unlikePost = asyncHandler(async (req, res) => {
 	try {
 		const post = await Post.findById(req.params.id);
 
@@ -168,7 +168,7 @@ exports.unlikePost = asyncHandler(async (req, res) => {
 // @desc     Comment on a post
 // @access   Private
 
-exports.commentPost = asyncHandler(async (req, res) => {
+const commentPost = asyncHandler(async (req, res) => {
 	try {
 		const user = await User.findById(req.user._id).select('-password');
 		const post = await Post.findById(req.params.id);
@@ -200,7 +200,7 @@ exports.commentPost = asyncHandler(async (req, res) => {
 // @desc     Delete comment
 // @access   Private
 
-exports.deleteComment = asyncHandler(async (req, res) => {
+const deleteComment = asyncHandler(async (req, res) => {
 	try {
 		const post = await Post.findById(req.params.id);
 
@@ -229,3 +229,14 @@ exports.deleteComment = asyncHandler(async (req, res) => {
 		});
 	}
 });
+
+export {
+	createPost,
+	getAllPosts,
+	getPostById,
+	deletePost,
+	likePost,
+	unlikePost,
+	commentPost,
+	deleteComment,
+};
